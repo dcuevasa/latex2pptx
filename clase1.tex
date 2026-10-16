@@ -1,0 +1,843 @@
+% =========================================================================
+%  IA Aplicada para COMFABOY - Sesión 1 (virtual, 2 horas)
+%  Compilar con pdflatex (2 pasadas, por "remember picture").
+%  Guion del docente: guion_clase1.md
+% =========================================================================
+\documentclass[aspectratio=169, 11pt]{beamer}
+
+% --- Paquetes -------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot,es-noshorthands]{babel}
+\usepackage{helvet}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc, arrows.meta, babel}
+\usepackage{fontawesome5}
+\graphicspath{{./}{./img/}}
+
+% --- Beamer: sin navegación ni barras ---------------------------------------
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+
+% --- Desactivar separación silábica con guiones ---
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\binoppenalty=10000
+\relpenalty=10000
+\tolerance=9999
+\emergencystretch=20pt
+\righthyphenmin=62
+\lefthyphenmin=62
+
+% --- Colores institucionales -------------------------------------------------
+\definecolor{edcoDark}{HTML}{1A1A1A}
+\definecolor{edcoBlue}{HTML}{004B87}
+\definecolor{edcoAccent}{HTML}{2B6CB0}
+\definecolor{edcoGray}{HTML}{4A5568}
+\definecolor{edcoLightBlue}{HTML}{D0E8FF}
+\definecolor{edcoPale}{HTML}{EEF6FF}
+\definecolor{edcoAlert}{HTML}{C53030}
+\definecolor{edcoAlertBg}{HTML}{FDECEC}
+\definecolor{edcoGreen}{HTML}{2F855A}
+\definecolor{edcoGreenBg}{HTML}{E6F4EA}
+\definecolor{edcoCream}{HTML}{F7F5F0}
+\setbeamercolor{normal text}{fg=edcoDark}
+
+% =========================================================================
+% FONDOS
+% =========================================================================
+% Fondos de la plantilla institucional (bg1 ... bg11)
+\newcommand{\usebg}[1]{%
+  \setbeamertemplate{background}{%
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[at=(current page.center), inner sep=0pt] {%
+        \includegraphics[width=\paperwidth, height=\paperheight]{bg#1}};
+    \end{tikzpicture}}}
+
+% Fondo "esqueleto": blanco con detalles institucionales sutiles
+\newcommand{\skeletonbg}{%
+  \setbeamertemplate{background}{%
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[edcoLightBlue!40] (current page.north east) -- ([xshift=-2.5cm]current page.north east)
+        arc (180:270:2.5cm) -- ([yshift=-2.5cm]current page.north east) -- cycle;
+      \fill[edcoLightBlue!40] (current page.south west) -- ([yshift=3cm]current page.south west)
+        arc (90:0:3cm) -- ([xshift=3cm]current page.south west) -- cycle;
+      \fill[edcoBlue] (current page.south west) rectangle ++(0.15, 2);
+    \end{tikzpicture}}}
+
+% =========================================================================
+% LIENZO: coordenadas relativas a la página, origen ARRIBA-IZQUIERDA.
+%   (0,0) = esquina superior izquierda, (1,1) = esquina inferior derecha.
+%   Ej.: (0.06, 0.10) = 6 % desde la izquierda y 10 % desde arriba.
+% =========================================================================
+\newenvironment{canvas}{%
+  \begin{tikzpicture}[remember picture, overlay]
+  \begin{scope}[shift={(current page.north west)}, x=\paperwidth, y=-\paperheight]}
+  {\end{scope}\end{tikzpicture}}
+
+% Tamaños de letra
+\newcommand{\fsTitle}{\fontsize{20}{24}\selectfont}
+\newcommand{\fsSub}{\fontsize{11}{14}\selectfont}
+\newcommand{\fsBody}{\fontsize{10.5}{13.5}\selectfont}
+\newcommand{\fsSmall}{\fontsize{9}{11.5}\selectfont}
+\newcommand{\fsTiny}{\fontsize{7.5}{9}\selectfont}
+
+% Título + subtítulo:  \TitleAt{x}{y}{ancho}{Título}{Subtítulo (opcional)}
+\newcommand{\TitleAt}[5]{%
+  \node[anchor=north west, inner sep=0, text width=#3\paperwidth, align=left] at (#1,#2) {%
+    {\fsTitle\bfseries\color{edcoDark}#4\par}%
+    \if\relax\detokenize{#5}\relax\else
+      \vspace{5pt}{\fsSub\bfseries\color{edcoBlue}#5\par}\fi};}
+
+% Etiqueta pequeña en mayúsculas: \KickerAt{x}{y}{texto}
+\newcommand{\KickerAt}[3]{%
+  \node[anchor=north west, inner sep=0] at (#1,#2)
+    {\fontsize{9}{11}\selectfont\bfseries\color{edcoBlue}#3};}
+
+% Tarjeta con ícono: \Card{x}{y}{ancho}{alto}{relleno}{relleno-icono}{ícono}{título}{texto}
+\newcommand{\Card}[9]{%
+  \fill[#5, rounded corners=9pt] (#1,#2) rectangle ++(#3,#4);
+  \node[circle, fill=#6, minimum size=1.15cm, inner sep=0, text=edcoBlue]
+    at ({#1+#3/2},{#2+0.11}) {\fontsize{16}{16}\selectfont #7};
+  \node[anchor=north, inner sep=0, align=center,
+        text width={\dimexpr #3\paperwidth-14pt\relax}]
+    at ({#1+#3/2},{#2+0.22}) {%
+      {\fontsize{12}{15}\selectfont\bfseries #8\par}%
+      \vspace{6pt}%
+      {\fsSmall\color{edcoGray}#9\par}};}
+
+% Fila con ícono: \IconRow{x}{y}{ancho}{ícono}{título en negrita}{texto}
+\newcommand{\IconRow}[6]{%
+  \node[circle, fill=edcoLightBlue, minimum size=0.8cm, inner sep=0, text=edcoBlue]
+    at ({#1+0.025},{#2}) {\fontsize{12}{12}\selectfont #4};
+  \node[anchor=west, inner sep=0, align=left,
+        text width={\dimexpr #3\paperwidth-0.065\paperwidth\relax}]
+    at ({#1+0.065},{#2}) {%
+      \if\relax\detokenize{#5}\relax\else{\fsBody\bfseries #5\par}\fi
+      \if\relax\detokenize{#6}\relax\else{\fsSmall\color{edcoGray}#6\par}\fi};}
+
+% Número en círculo: \NumAt{x}{y}{n}
+\newcommand{\NumAt}[3]{%
+  \node[circle, fill=edcoBlue, text=white, minimum size=0.62cm, inner sep=0,
+        font=\fontsize{11}{11}\selectfont\bfseries] at (#1,#2) {#3};}
+
+\tikzset{
+  chip/.style={rounded corners=5pt, fill=edcoLightBlue, text=edcoBlue, inner xsep=6pt,
+               inner ysep=3.5pt, font=\fontsize{8}{10}\selectfont\bfseries},
+  arrowblue/.style={-{Latex[length=7pt,width=7pt]}, line width=2pt, edcoBlue!70},
+}
+
+\begin{document}
+
+% =========================================================================
+% 1. PORTADA
+% =========================================================================
+\usebg{1}
+\begin{frame}[plain]
+\end{frame}
+
+% =========================================================================
+% 2. TÍTULO DEL PROGRAMA
+% =========================================================================
+\usebg{2}
+\begin{frame}[plain]
+\begin{canvas}
+  \node[anchor=north west, inner sep=0, text width=0.50\paperwidth, align=left] at (0.065,0.585) {%
+    {\fontsize{16}{19}\selectfont\bfseries Inteligencia Artificial\\ Aplicada para COMFABOY\par}
+    \vspace{5pt}
+    {\fontsize{10}{12}\selectfont\color{edcoBlue}\bfseries Sesión 1 \textperiodcentered\ \color{edcoGray}Introducción, expectativas y fundamentos\par}};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 3. AGENDA
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.75}{Agenda de hoy}{Sesión virtual \textperiodcentered\ 2 horas}
+  % Horas
+  \foreach \x/\t in {0.06/00:00, 0.4267/00:50, 0.5733/01:10, 0.94/02:00}
+    \node[anchor=south, font=\fontsize{8}{9}\selectfont\bfseries, text=edcoGray] at (\x,0.285) {\t};
+  % Barra de tiempo (proporcional: 50 / 20 / 50 min)
+  \fill[edcoBlue, rounded corners=5pt]       (0.06,0.30)   rectangle (0.4237,0.40);
+  \fill[edcoGray!35, rounded corners=5pt]    (0.4297,0.30) rectangle (0.5703,0.40);
+  \fill[edcoAccent, rounded corners=5pt]     (0.5763,0.30) rectangle (0.94,0.40);
+  \node[text=white, font=\fontsize{10}{12}\selectfont\bfseries] at (0.242,0.35) {Bloque 1 \textperiodcentered\ 50 min};
+  \node[text=edcoDark, font=\fontsize{9}{11}\selectfont\bfseries] at (0.50,0.35) {\faCoffee\ Pausa};
+  \node[text=white, font=\fontsize{10}{12}\selectfont\bfseries] at (0.758,0.35) {Bloque 2 \textperiodcentered\ 50 min};
+  % Contenidos
+  \node[anchor=north west, inner sep=0, font=\fsSmall] at (0.06,0.46) {%
+    \renewcommand{\arraystretch}{1.55}%
+    \begin{tabular}{@{}l@{\hspace{8pt}}l@{}}
+      \color{edcoBlue}\bfseries 00:00 & Presentación y enfoque del curso \\
+      \color{edcoBlue}\bfseries 00:15 & Mitos y casos reales de uso \\
+      \color{edcoBlue}\bfseries 00:25 & El equipo y expectativas COMFABOY \\
+      \color{edcoBlue}\bfseries 00:40 & Lo que la IA puede hacer hoy \\
+    \end{tabular}};
+  \node[anchor=north, inner sep=0, align=center, font=\fsSmall, text=edcoGray] at (0.50,0.49)
+    {20 min\\de descanso};
+  \node[anchor=north west, inner sep=0, font=\fsSmall] at (0.5763,0.46) {%
+    \renewcommand{\arraystretch}{1.55}%
+    \begin{tabular}{@{}l@{\hspace{8pt}}l@{}}
+      \color{edcoAccent}\bfseries 01:10 & Cómo funciona la IA y sus límites \\
+      \color{edcoAccent}\bfseries 01:30 & Uso responsable y Ley 1581 \\
+      \color{edcoAccent}\bfseries 01:50 & Cierre y preparación Sesión 2 \\
+    \end{tabular}};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 4. OBJETIVO DE LA SESIÓN
+% =========================================================================
+\usebg{6}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.70}{Objetivo de la sesión}{Cuatro metas para estas dos horas}
+  \Card{0.060}{0.26}{0.205}{0.61}{edcoPale}{white}{\faHandshake}{Romper el hielo}{Conocernos y generar confianza}
+  \Card{0.285}{0.26}{0.205}{0.61}{edcoPale}{white}{\faBullseye}{Alinear expectativas}{Partir de sus necesidades reales}
+  \Card{0.510}{0.26}{0.205}{0.61}{edcoPale}{white}{\faRocket}{Panorama actual}{Lo que la IA ya puede hacer hoy}
+  \Card{0.735}{0.26}{0.205}{0.61}{edcoPale}{white}{\faBalanceScale}{Poner las bases}{Límites y uso responsable}
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 5. PRESENTACIÓN DEL PROFESOR
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \fill[edcoLightBlue!60] (0.25,0.53) circle (2.55cm);
+  \begin{scope}
+    \clip (0.25,0.53) circle (2.3cm);
+    \node[inner sep=0] at (0.25,0.53) {\includegraphics[width=4.6cm]{FotoBuenaCorte.jpg}};
+  \end{scope}
+  \draw[edcoBlue, line width=2pt] (0.25,0.53) circle (2.3cm);
+  \node[anchor=north west, inner sep=0, text width=0.48\paperwidth, align=left] at (0.47,0.17) {%
+    {\fontsize{22}{26}\selectfont\bfseries David Cuevas Alba\par}\vspace{3pt}
+    {\fsSub\bfseries\color{edcoBlue}Profesor \textperiodcentered\ Universidad de los Andes\par}};
+  \IconRow{0.47}{0.42}{0.48}{\faGraduationCap}{Ingeniero de Sistemas}{Maestría en Ingeniería de Sistemas}
+  \IconRow{0.47}{0.565}{0.48}{\faChalkboardTeacher}{Profesor universitario}{Estructuras de Datos y Algoritmos}
+  \IconRow{0.47}{0.71}{0.48}{\faRobot}{Campeón RoboCup@Home 2024}{Categoría SSPL \textperiodcentered\ Países Bajos}
+  \IconRow{0.47}{0.855}{0.48}{\faCogs}{IA aplicada}{Automatización de procesos reales}
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 6. SEPARADOR BLOQUE 1
+% =========================================================================
+\usebg{4}
+\begin{frame}[plain]
+\begin{canvas}
+  \node[anchor=north west, inner sep=0, text width=0.46\paperwidth, align=left] at (0.06,0.18) {%
+    {\fontsize{12}{14}\selectfont\bfseries\color{edcoBlue}BLOQUE 1\par}\vspace{8pt}
+    {\fontsize{22}{26}\selectfont\bfseries Presentación,\\ contexto y el\\ horizonte de la IA\par}\vspace{10pt}
+    {\fsSub\color{edcoGray}De la idea general a lo que ya es posible hoy\par}};
+  \node[chip, fill=white, anchor=north west] at (0.06,0.78) {\faClock[regular]\ 00:00 -- 00:50 \textperiodcentered\ 50 min};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 7. LA IDEA DE ESTAS SESIONES
+% =========================================================================
+\usebg{7}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.72}{La idea de estas sesiones}{Uso aplicado, no teoría}
+  % NO es
+  \fill[white, rounded corners=9pt] (0.06,0.26) rectangle (0.48,0.88);
+  \node[anchor=north west, inner sep=0, text=edcoGray, font=\fontsize{13}{15}\selectfont\bfseries]
+    at (0.09,0.32) {\textcolor{edcoAlert}{\faTimesCircle}\ \ Esto NO es\dots};
+  \node[anchor=north west, inner sep=0, text width=0.35\paperwidth, font=\fsBody, text=edcoGray] at (0.09,0.44) {%
+    \begin{itemize}\setlength\itemsep{9pt}
+      \item[\textcolor{edcoAlert}{\faTimes}] Un curso de ingeniería o programación
+      \item[\textcolor{edcoAlert}{\faTimes}] Teoría y fórmulas matemáticas
+      \item[\textcolor{edcoAlert}{\faTimes}] Una charla sobre un futuro lejano
+    \end{itemize}};
+  % SÍ es
+  \fill[edcoBlue, rounded corners=9pt] (0.52,0.26) rectangle (0.94,0.88);
+  \node[anchor=north west, inner sep=0, text=white, font=\fontsize{13}{15}\selectfont\bfseries]
+    at (0.55,0.32) {\faCheckCircle\ \ Esto SÍ es\dots};
+  \node[anchor=north west, inner sep=0, text width=0.35\paperwidth, font=\fsBody, text=white] at (0.55,0.44) {%
+    \begin{itemize}\setlength\itemsep{9pt}\color{white}
+      \item[\textcolor{white}{\faCheck}] \textcolor{white}{Aplicado a los procesos de su área}
+      \item[\textcolor{white}{\faCheck}] \textcolor{white}{Con herramientas que ya tienen}
+      \item[\textcolor{white}{\faCheck}] \textcolor{white}{Terminar con un producto que funcione}
+    \end{itemize}};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 8. MITO VS. REALIDAD  (revela cada realidad)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.78}{Mito vs. realidad}{Lo que la IA es\dots\ y lo que no es}
+  \node[anchor=west, inner sep=0, font=\fontsize{9}{11}\selectfont\bfseries, text=edcoGray] at (0.06,0.27) {MITO};
+  \node[anchor=west, inner sep=0, font=\fontsize{9}{11}\selectfont\bfseries, text=edcoBlue] at (0.53,0.27) {REALIDAD};
+  \foreach \y/\mito/\real/\s in {
+      {0.32/«La IA va a reemplazar a mi equipo»/{Reemplaza tareas, no personas: asume lo mecánico}/2},
+      {0.50/«La IA lo sabe todo»/Predice texto plausible y puede equivocarse con total seguridad/3},
+      {0.68/«Usar IA es hacer trampa»/{Es una herramienta más, usada con criterio y transparencia}/4}}{
+    \fill[gray!12, rounded corners=6pt] (0.06,\y) rectangle ++(0.38,0.15);
+    \node[anchor=west, inner sep=0, text width=0.34\paperwidth, font=\fsBody, text=edcoGray]
+      at (0.08,\y+0.075) {\itshape\mito};
+    \draw[arrowblue] (0.455,\y+0.075) -- (0.515,\y+0.075);
+    \only<\s->{
+      \fill[edcoLightBlue, rounded corners=6pt] (0.53,\y) rectangle ++(0.41,0.15);
+      \node[anchor=west, inner sep=0, text width=0.37\paperwidth, font=\fsBody]
+        at (0.55,\y+0.075) {\bfseries\real};
+    }
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 9. REFLEXIÓN INICIAL: ¿QUIÉN ESTÁ TRABAJANDO PARA QUIÉN?
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \begin{scope}
+    \clip[rounded corners=14pt] (0.585,0.06) rectangle (0.935,0.94);
+    \node[inner sep=0] at (0.76,0.50) {\includegraphics[height=0.88\paperheight]{FotoPepper.jpeg}};
+  \end{scope}
+  \KickerAt{0.06}{0.12}{REFLEXIÓN INICIAL \textperiodcentered\ EL TRABAJO REAL CON IA}
+  \node[anchor=north west, inner sep=0, text width=0.51\paperwidth, align=left] at (0.06,0.19)
+    {\fontsize{22}{27}\selectfont\bfseries ¿Quién está trabajando para quién?};
+  \only<2->{
+    \IconRow{0.06}{0.52}{0.48}{\faRobot}{La máquina}{Lo repetitivo, rápido y predecible}
+    \IconRow{0.06}{0.66}{0.48}{\faUser}{La persona}{Criterio, contexto y decisión}
+  }
+  \only<3->{
+    \fill[edcoBlue, rounded corners=7pt] (0.06,0.78) rectangle (0.54,0.90);
+    \node[text=white, font=\fontsize{13}{15}\selectfont\bfseries] at (0.30,0.84)
+      {La IA es el copiloto, no el piloto};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 10. CASOS REALES DE APLICACIÓN
+% =========================================================================
+\usebg{3}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.05}{0.25}{0.44}{Casos de uso reales}{Cómo aplico la IA en mi trabajo}
+  \IconRow{0.05}{0.53}{0.40}{\faTasks}{Gestión de proyectos}{Actas, cronogramas y seguimiento}
+  \IconRow{0.05}{0.67}{0.40}{\faChartBar}{Análisis de datos}{Ordenar información y hallar patrones}
+  \IconRow{0.05}{0.81}{0.40}{\faTools}{Problemas técnicos}{Diagnóstico rápido con documentación}
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 11. EL PROGRAMA COMFABOY
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.78}{Un programa hecho para COMFABOY}{Nivel estratégico: jefes, analistas y coordinadores}
+  \foreach \x/\num/\lab/\txt in {
+      0.06/24 h/de formación/Sesiones virtuales y presenciales,
+      0.37/100\,\%/aplicado/Al día a día de las áreas de soporte,
+      0.68/1/producto real/Una solución funcional por equipo}{
+    \fill[edcoPale, rounded corners=9pt] (\x,0.26) rectangle ++(0.26,0.60);
+    \fill[edcoBlue] (\x,0.26) ++(0,0.02) rectangle ++(0.008,0.56);
+    \node[anchor=north west, inner sep=0, text width=0.21\paperwidth, align=left] at (\x+0.03,0.34) {%
+      {\fontsize{30}{32}\selectfont\bfseries\color{edcoBlue}\num\par}\vspace{4pt}
+      {\fontsize{13}{15}\selectfont\bfseries \lab\par}\vspace{8pt}
+      {\fsBody\color{edcoGray}\txt\par}};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 12. CONOCIENDO AL EQUIPO
+% =========================================================================
+\usebg{5}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.49}{0.11}{0.46}{Conociendo al equipo}{\faMicrophone\ Micrófono o \faCommentDots\ chat \textperiodcentered\ 1 minuto c/u}
+  \foreach \y/\n/\t in {0.32/1/Nombre y cargo, 0.47/2/Área en la que trabaja, 0.62/3/Una tarea que le quite mucho tiempo cada semana}{
+    \NumAt{0.51}{\y}{\n}
+    \node[anchor=west, inner sep=0, text width=0.40\paperwidth, font=\fontsize{12}{14}\selectfont] at (0.55,\y) {\t};
+  }
+  \node[chip, anchor=west] (c1) at (0.49,0.78) {Talento Humano};
+  \node[chip, anchor=west] (c2) at ([xshift=4pt]c1.east) {Financiera};
+  \node[chip, anchor=west] (c3) at ([xshift=4pt]c2.east) {Jurídica};
+  \node[chip, anchor=west] (c4) at ([xshift=4pt]c3.east) {TI};
+  \node[chip, anchor=west] (c5) at ([xshift=4pt]c4.east) {\dots};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 13. EXPECTATIVAS
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \KickerAt{0.06}{0.10}{EXPECTATIVAS}
+  \fill[edcoBlue, rounded corners=14pt] (0.12,0.20) rectangle (0.88,0.58);
+  \fill[edcoBlue] (0.20,0.57) -- (0.26,0.57) -- (0.18,0.68) -- cycle;
+  \node[text=white, align=center, text width=0.70\paperwidth, font=\fontsize{24}{30}\selectfont\bfseries]
+    at (0.50,0.39) {¿Qué les gustaría sacar de este curso?};
+  \node[font=\fontsize{14}{17}\selectfont\bfseries, text=edcoDark] at (0.55,0.72)
+    {\textcolor{edcoBlue}{\faCommentDots}\ \ Escríbanlo en el chat};
+  \node[font=\fsSmall, text=edcoGray, align=center] at (0.55,0.82)
+    {Con sus respuestas elegiremos los ejemplos de las próximas sesiones};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 14. CUENTAS INSTITUCIONALES
+% =========================================================================
+\usebg{6}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.70}{Cuentas institucionales}{Todo el curso con su correo @uniandes.edu.co}
+  % Tarjeta de cuenta (maqueta)
+  \fill[white, rounded corners=10pt, draw=edcoGray!30, line width=0.8pt] (0.06,0.26) rectangle (0.40,0.86);
+  \node[circle, fill=edcoBlue, text=white, minimum size=1.3cm, font=\fontsize{20}{20}\selectfont\bfseries]
+    at (0.23,0.40) {C};
+  \node[font=\fontsize{11}{13}\selectfont\bfseries] at (0.23,0.53) {Participante COMFABOY};
+  \node[font=\fontsize{9.5}{12}\selectfont\ttfamily, text=edcoGray] at (0.23,0.61) {nombre@uniandes.edu.co};
+  \node[chip, fill=edcoGreenBg, text=edcoGreen] at (0.23,0.73) {\faCheckCircle\ Cuenta institucional};
+  % Beneficios
+  \IconRow{0.45}{0.36}{0.50}{\faIcon{shield-alt}}{Entorno protegido}{Google Workspace for Education}
+  \IconRow{0.45}{0.52}{0.50}{\faBan}{Sus datos no entrenan modelos}{No se usan para mejorar modelos públicos}
+  \IconRow{0.45}{0.68}{0.50}{\faUserCheck}{Verifique siempre la cuenta}{Antes de escribir, revise su foto de perfil}
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 15. LO QUE ES POSIBLE HOY (resumen)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.78}{Lo que es posible hoy}{El horizonte de la IA, aterrizado a sus cuentas}
+  \foreach \x in {0.06,0.37,0.68}
+    \fill[edcoPale, rounded corners=9pt] (\x,0.25) rectangle ++(0.26,0.63);
+  % Gemini
+  \node at (0.19,0.36) {\includegraphics[height=1.0cm]{Google_Gemini_logo.png}};
+  % NotebookLM
+  \node at (0.50,0.36) {\includegraphics[width=3.4cm]{NotebookLM_logo.png}};
+  % Multimodal
+  \node[circle, fill=white, minimum size=1.15cm, inner sep=0, text=edcoBlue] at (0.81,0.36)
+    {\fontsize{16}{16}\selectfont\faBrain};
+  \foreach \x/\t/\d in {
+      {0.06/Productividad «lado a lado»/{Redactar, resumir y estructurar en una pestaña paralela}},
+      {0.37/Investigación segura/Consultas fundamentadas sobre sus propios documentos},
+      {0.68/Multimodal y razonamiento/{Video, contextos enormes y análisis profundo}}}{
+    \node[anchor=north, inner sep=0, align=center, text width=0.22\paperwidth] at (\x+0.13,0.47) {%
+      {\fontsize{11.5}{14}\selectfont\bfseries\t\par}\vspace{6pt}{\fsSmall\color{edcoGray}\d\par}};
+  }
+  \node[chip, fill=edcoGreenBg, text=edcoGreen] at (0.19,0.81) {\faCheck\ Lo usaremos};
+  \node[chip, fill=edcoGreenBg, text=edcoGreen] at (0.50,0.81) {\faCheck\ Lo usaremos};
+  \node[chip, fill=gray!15, text=edcoGray] at (0.81,0.81) {\faEye\ Visión a futuro};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 16. PRODUCTIVIDAD LADO A LADO
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.09}{0.78}{Productividad «lado a lado»}{Gemini en una pestaña, su Workspace en la otra}
+  % Ventana Gemini
+  \fill[white, rounded corners=8pt, draw=edcoGray!35, line width=0.8pt] (0.06,0.32) rectangle (0.40,0.80);
+  \fill[edcoGray!12, rounded corners=8pt] (0.06,0.32) rectangle (0.40,0.39);
+  \foreach \i in {0,1,2} \fill[edcoGray!45] (0.08+\i*0.018,0.355) circle (1.6pt);
+  \node[font=\fsTiny, text=edcoGray] at (0.25,0.355) {gemini.google.com};
+  \node at (0.23,0.50) {\includegraphics[height=0.85cm]{Google_Gemini_logo.png}};
+  \node[chip] at (0.125,0.67) {Redactar};
+  \node[chip] at (0.23,0.67) {Resumir};
+  \node[chip] at (0.335,0.67) {Esquemas};
+  % Ventana Workspace
+  \fill[white, rounded corners=8pt, draw=edcoGray!35, line width=0.8pt] (0.60,0.32) rectangle (0.94,0.80);
+  \fill[edcoGray!12, rounded corners=8pt] (0.60,0.32) rectangle (0.94,0.39);
+  \foreach \i in {0,1,2} \fill[edcoGray!45] (0.62+\i*0.018,0.355) circle (1.6pt);
+  \node[font=\fsTiny, text=edcoGray] at (0.79,0.355) {Gmail \textperiodcentered\ Docs \textperiodcentered\ Sheets};
+  \node at (0.69,0.56) {\includegraphics[height=0.9cm]{Gmail_icon_2020.png}};
+  \node at (0.77,0.56) {\includegraphics[height=1.1cm]{Google_Docs_2020_Logo.png}};
+  \node at (0.85,0.56) {\includegraphics[height=1.1cm]{Google_Sheets_2020_Logo.png}};
+  % Flechas del flujo
+  \draw[arrowblue] (0.585,0.47) -- (0.415,0.47);
+  \node[anchor=south, align=center, font=\fontsize{8}{9.5}\selectfont\bfseries, text=edcoBlue] at (0.50,0.455) {1. Copiar\\contexto};
+  \draw[arrowblue] (0.415,0.66) -- (0.585,0.66);
+  \node[anchor=south, align=center, font=\fontsize{8}{9.5}\selectfont\bfseries, text=edcoBlue] at (0.50,0.645) {3. Pegar\\y ajustar};
+  \node[anchor=north, font=\fontsize{8}{9.5}\selectfont\bfseries, text=edcoBlue] at (0.23,0.74) {2. Pedir};
+  % Nota de licencia
+  \node[anchor=north west, inner sep=0, text width=0.88\paperwidth, font=\fsSmall, text=edcoGray] at (0.06,0.85)
+    {\textcolor{edcoBlue}{\faInfoCircle}\ «Ayúdame a escribir» dentro de Gmail y Docs requiere licencia Pro. Con este flujo logramos resultados similares con la cuenta básica.};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 17. NOTEBOOKLM
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \node[anchor=north west, inner sep=0] at (0.06,0.10) {\includegraphics[width=5.2cm]{NotebookLM_logo.png}};
+  \node[anchor=north west, inner sep=0, font=\fsSub\bfseries, text=edcoBlue] at (0.06,0.19)
+    {Investigación segura sobre sus propios documentos};
+  \foreach \x/\ic/\t/\d in {
+      {0.20/\faFilePdf/1. Subir fuentes/{Manuales, reglamentos y PDFs}},
+      {0.50/\faCommentDots/2. Preguntar/Respuestas con cita a la fuente},
+      {0.80/\faHeadphones/3. Escuchar/Resumen en audio tipo pódcast}}{
+    \node[circle, fill=edcoBlue, text=white, minimum size=1.35cm, inner sep=0] at (\x,0.42)
+      {\fontsize{18}{18}\selectfont\ic};
+    \node[anchor=north, align=center, inner sep=0, text width=0.24\paperwidth] at (\x,0.53) {%
+      {\fontsize{11}{13}\selectfont\bfseries\t\par}\vspace{3pt}{\fsSmall\color{edcoGray}\d\par}};
+  }
+  \draw[arrowblue] (0.27,0.42) -- (0.43,0.42);
+  \draw[arrowblue] (0.57,0.42) -- (0.73,0.42);
+  \fill[edcoPale, rounded corners=7pt] (0.06,0.75) rectangle (0.94,0.88);
+  \node[anchor=west, inner sep=0, text width=0.84\paperwidth, font=\fsBody] at (0.08,0.815)
+    {\textcolor{edcoGreen}{\faCheckCircle}\ \ \textbf{Grounded Q\&A:} responde solo con lo que está en sus documentos y muestra de dónde sale cada dato.};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 18. CAPACIDADES AVANZADAS (visión)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.78}{Hacia dónde va la IA}{Visión a futuro \textperiodcentered\ algunas funciones requieren licencias avanzadas}
+  \foreach \x/\y/\ic/\t/\d in {
+      0.06/0.25/\faBookOpen/Contextos masivos/{Auditar manuales de más de 1.000 páginas},
+      0.51/0.25/\faVideo/Video nativo/{Analizar grabaciones de reuniones y talleres},
+      0.06/0.57/\faBrain/Razonamiento avanzado/{Solución paso a paso de problemas técnicos},
+      {0.51/0.57/\faPhotoVideo/Contenido multimedia/{Generar imágenes, gráficos y voz}}}{
+    \fill[edcoPale, rounded corners=9pt] (\x,\y) rectangle ++(0.43,0.27);
+    \node[circle, fill=white, text=edcoBlue, minimum size=1.2cm, inner sep=0] at (\x+0.065,\y+0.135)
+      {\fontsize{16}{16}\selectfont\ic};
+    \node[anchor=west, inner sep=0, text width=0.285\paperwidth, align=left] at (\x+0.13,\y+0.135) {%
+      {\fontsize{11.5}{14}\selectfont\bfseries\t\par}\vspace{4pt}{\fsSmall\color{edcoGray}\d\par}};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 19. PAUSA ACTIVA
+% =========================================================================
+\usebg{8}
+\begin{frame}[plain]
+\begin{canvas}
+  \node[anchor=north west, inner sep=0, text width=0.85\paperwidth, align=left] at (0.08,0.08) {%
+    {\fontsize{28}{32}\selectfont\bfseries PAUSA ACTIVA\ \ \ \textcolor{edcoBlue}{\fontsize{16}{20}\selectfont\faCoffee\ 20 minutos}\par}\vspace{6pt}
+    {\fsSub\color{edcoGray}Al volver: cómo funciona la IA y cómo usarla con responsabilidad\par}};
+  \Card{0.08}{0.28}{0.26}{0.58}{white}{edcoLightBlue}{\faEye}{Regla 20-20-20}{Cada 20 min, mire algo a 6 metros durante 20 s}
+  \Card{0.37}{0.28}{0.26}{0.58}{white}{edcoLightBlue}{\faWalking}{Muévase}{Párese y estire cuello y espalda}
+  \Card{0.66}{0.28}{0.26}{0.58}{white}{edcoLightBlue}{\faTint}{Hidrátese}{Un vaso de agua antes de volver}
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 20. SEPARADOR BLOQUE 2
+% =========================================================================
+\usebg{4}
+\begin{frame}[plain]
+\begin{canvas}
+  \node[anchor=north west, inner sep=0, text width=0.46\paperwidth, align=left] at (0.06,0.18) {%
+    {\fontsize{12}{14}\selectfont\bfseries\color{edcoBlue}BLOQUE 2\par}\vspace{8pt}
+    {\fontsize{22}{26}\selectfont\bfseries Fundamentos,\\ límites y uso\\ responsable\par}\vspace{10pt}
+    {\fsSub\color{edcoGray}Entender la herramienta para usarla con criterio\par}};
+  \node[chip, fill=white, anchor=north west] at (0.06,0.78) {\faClock[regular]\ 01:10 -- 02:00 \textperiodcentered\ 50 min};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 21. ¿CÓMO FUNCIONA? PREDICCIÓN  (3 pasos)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.09}{0.78}{¿Cómo funciona la IA?}{Un «autocompletar» gigante, entrenado con millones de textos}
+  \fill[gray!10, rounded corners=7pt] (0.06,0.31) rectangle (0.94,0.43);
+  \node[anchor=west, inner sep=0, font=\fontsize{15}{18}\selectfont] at (0.09,0.37)
+    {El afiliado solicitó un certificado de \textcolor{edcoBlue}{\bfseries\rule[-2pt]{2.6cm}{1.2pt}}};
+  \only<2->{
+    \foreach \y/\w/\lab/\p/\c in {
+        0.48/0.450/afiliación/58\,\%/edcoBlue,
+        0.56/0.171/ingresos/22\,\%/edcoAccent!70,
+        0.64/0.093/estudio/12\,\%/edcoAccent!45,
+        0.72/0.023/vacaciones/3\,\%/edcoAccent!30}{
+      \node[anchor=east, inner sep=0, font=\fsBody] at (0.30,\y+0.03) {\lab};
+      \fill[\c, rounded corners=2pt] (0.32,\y) rectangle ++(\w,0.06);
+      \node[anchor=west, inner sep=0, font=\fsSmall\bfseries, text=edcoGray] at (0.33+\w,\y+0.03) {\p};
+    }
+    \node[anchor=east, inner sep=0, font=\fsTiny\itshape, text=edcoGray] at (0.94,0.75) {Probabilidades ilustrativas};
+  }
+  \only<3->{
+    \node[anchor=west, inner sep=0, font=\fontsize{12}{14}\selectfont\bfseries] at (0.06,0.87)
+      {\textcolor{edcoBlue}{\faLightbulb}\ \ Elige lo más \textcolor{edcoBlue}{probable}\dots\ no necesariamente lo \textcolor{edcoAlert}{verdadero}.};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 22. DATOS Y SESGOS
+% =========================================================================
+\usebg{9}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.05}{0.09}{0.40}{Aprende de datos\dots\ y de sus sesgos}{}
+  \foreach \x/\ic/\t in {0.08/\faDatabase/Datos, 0.235/\faCogs/Modelo, 0.39/\faCommentDots/Respuestas}{
+    \node[circle, fill=edcoLightBlue, text=edcoBlue, minimum size=1.0cm, inner sep=0] at (\x,0.33)
+      {\fontsize{14}{14}\selectfont\ic};
+    \node[font=\fsSmall\bfseries] at (\x,0.44) {\t};
+  }
+  \draw[arrowblue, line width=1.5pt] (0.125,0.33) -- (0.19,0.33);
+  \draw[arrowblue, line width=1.5pt] (0.28,0.33) -- (0.345,0.33);
+  \node[anchor=north west, inner sep=0, text width=0.40\paperwidth, font=\fontsize{12}{15}\selectfont\bfseries] at (0.05,0.52)
+    {Si los datos tienen sesgos, las respuestas también.};
+  \fill[edcoPale, rounded corners=7pt] (0.05,0.64) rectangle (0.45,0.88);
+  \node[anchor=west, inner sep=0, text width=0.36\paperwidth, font=\fsSmall] at (0.07,0.76)
+    {\textbf{Ejemplo:} si un cargo lo ocuparon casi siempre hombres, la IA puede «suponer» que el candidato ideal es hombre.};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 23. DEFINICIÓN: ¿QUÉ ES UNA ALUCINACIÓN?
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.78}{¿Qué es una «alucinación»?}{Cuando la IA inventa respuestas y las presenta como hechos}
+  \foreach \x/\ic/\t/\d in {
+      {0.06/\faCommentDots/Tono seguro/{Gramática impecable y redacción totalmente convincente}},
+      {0.37/\faFileContract/Dato inexistente/{Cita normas, artículos, cifras o personas inventadas}},
+      {0.68/\faBrain/Sin mala fe/{No busca engañar: solo predice la secuencia más probable}}}{
+    \fill[edcoPale, rounded corners=9pt] (\x,0.26) rectangle ++(0.26,0.46);
+    \node[circle, fill=white, text=edcoBlue, minimum size=1.25cm, inner sep=0] at (\x+0.13,0.37)
+      {\fontsize{16}{16}\selectfont\ic};
+    \node[anchor=north, inner sep=0, align=center, text width=0.22\paperwidth] at (\x+0.13,0.48) {%
+      {\fontsize{12}{15}\selectfont\bfseries\t\par}\vspace{6pt}%
+      {\fsSmall\color{edcoGray}\d\par}};
+  }
+  \fill[edcoAlertBg, rounded corners=7pt, draw=edcoAlert!40, line width=0.8pt] (0.06,0.76) rectangle (0.94,0.89);
+  \node[anchor=west, inner sep=0, font=\fsBody, text width=0.84\paperwidth] at (0.08,0.825)
+    {\textcolor{edcoAlert}{\faExclamationTriangle}\ \ \textbf{El peligro real:} Una alucinación parece profesional y verosímil. Si uno no verifica contra la fuente, pasa desapercibida.};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 24. ALUCINACIONES: EJEMPLO  (2 pasos)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.09}{0.78}{El problema de las «alucinaciones»}{Respuestas inventadas\dots\ con total seguridad}
+  % Pregunta del usuario
+  \fill[edcoBlue, rounded corners=9pt] (0.40,0.30) rectangle (0.94,0.41);
+  \node[anchor=west, inner sep=0, text width=0.50\paperwidth, text=white, font=\fsBody] at (0.42,0.355)
+    {\faUser\ \ ¿Qué establece el artículo 45 de la Ley 1581 de 2012?};
+  % Respuesta inventada
+  \fill[gray!12, rounded corners=9pt] (0.06,0.45) rectangle (0.72,0.71);
+  \node[anchor=north west, inner sep=0, text width=0.62\paperwidth, font=\fsBody] at (0.08,0.48) {%
+    {\fsTiny\bfseries\color{edcoGray}\faRobot\ ASISTENTE IA\par}\vspace{3pt}
+    El artículo 45 obliga a las cajas de compensación a renovar cada seis meses la autorización escrita
+    de sus afiliados para el tratamiento de sus datos personales\dots};
+  \only<2->{
+    \node[rotate=12, draw=edcoAlert, line width=2pt, rounded corners=4pt, text=edcoAlert,
+          font=\fontsize{20}{22}\selectfont\bfseries, inner sep=6pt] at (0.83,0.58) {¡FALSO!};
+    \fill[edcoAlertBg, rounded corners=7pt] (0.06,0.76) rectangle (0.94,0.88);
+    \node[anchor=west, inner sep=0, font=\fontsize{11}{13}\selectfont\bfseries, text=edcoAlert] at (0.08,0.82)
+      {\faExclamationTriangle\ \ La Ley 1581 de 2012 tiene 30 artículos: el artículo 45 no existe.};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 24. ¿POR QUÉ ALUCINA?
+% =========================================================================
+\usebg{7}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.72}{¿Por qué la IA «alucina»?}{No miente: predice}
+  \IconRow{0.06}{0.30}{0.74}{\faDice}{Predice lo plausible}{No verifica si es verdadero}
+  \IconRow{0.06}{0.45}{0.74}{\faComment}{Tiende a responder siempre}{Aunque no tenga el dato}
+  \IconRow{0.06}{0.60}{0.74}{\faLightbulb}{No tiene sentido común}{Ni experiencia del mundo real}
+  \fill[white, rounded corners=7pt] (0.06,0.74) rectangle (0.94,0.88);
+  \node[anchor=west, inner sep=0, font=\fsBody] at (0.08,0.81)
+    {\textcolor{edcoAlert}{\faExclamationTriangle}\ \ \textbf{Mayor riesgo:} cifras, leyes, nombres, fechas y citas.};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 25. REGLA DE ORO
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.09}{0.78}{Regla de oro}{El humano en el centro}
+  % Ciclo
+  \node[circle, fill=edcoBlue, text=white, minimum size=1.8cm, inner sep=0, align=center] (h) at (0.28,0.58)
+    {{\fontsize{17}{17}\selectfont\faUser}\\[2pt]{\fsSmall\bfseries Usted}};
+  \node[chip, font=\fontsize{9}{11}\selectfont\bfseries] (s) at (0.28,0.34) {\faRobot\ La IA sugiere};
+  \node[chip, fill=edcoBlue!85, text=white, font=\fontsize{9}{11}\selectfont\bfseries] (r) at (0.44,0.81) {\faSearch\ Usted revisa};
+  \node[chip, fill=edcoBlue!85, text=white, font=\fontsize{9}{11}\selectfont\bfseries] (d) at (0.12,0.81) {\faCheck\ Usted decide};
+  \draw[arrowblue, line width=1.5pt] (s.east) to[bend left=35] (r.north);
+  \draw[arrowblue, line width=1.5pt] (r.west) to[bend left=25] (d.east);
+  \draw[arrowblue, line width=1.5pt] (d.north) to[bend left=35] (s.west);
+  % Mensaje
+  \node[anchor=north west, inner sep=0, text width=0.43\paperwidth, align=left] at (0.54,0.38) {%
+    {\fontsize{18}{23}\selectfont\bfseries La herramienta sugiere.\par\vspace{6pt}%
+     \textcolor{edcoBlue}{La persona}\\%
+     \textcolor{edcoBlue}{revisa y decide.}\par}\vspace{12pt}
+    {\fsBody\color{edcoGray}Usted firma el resultado: la responsabilidad no se delega.\par}};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 26. MARCO ACT  (revela A, C, T)
+% =========================================================================
+\usebg{6}
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.72}{Uso responsable: el marco ACT}{Tres pasos antes de usar un resultado}
+  \foreach \x/\L/\t/\d/\s in {
+      {0.06/A/Analizar/{¿Es una tarea para IA? ¿Qué pasa si se equivoca?}/1},
+      {0.37/C/Comprobar/{Verificar cifras, normas y datos oficiales}/2},
+      {0.68/T/Transparencia/{Declarar cuándo un material fue asistido por IA}/3}}{
+    \only<\s->{
+      \fill[edcoLightBlue!55, rounded corners=9pt] (\x,0.26) rectangle ++(0.26,0.61);
+      \node[circle, fill=edcoBlue, text=white, minimum size=1.35cm, inner sep=0,
+            font=\fontsize{24}{24}\selectfont\bfseries] at (\x+0.13,0.38) {\L};
+      \node[anchor=north, inner sep=0, align=center, text width=0.22\paperwidth] at (\x+0.13,0.49) {%
+        {\fontsize{13}{16}\selectfont\bfseries\t\par}\vspace{8pt}{\fsBody\color{edcoGray}\d\par}};
+    }
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 27. LEY 1581: ANONIMIZAR  (2 pasos)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.09}{0.78}{Ley 1581 de 2012: datos personales}{Aunque la cuenta sea segura, el hábito es anonimizar}
+  % Nunca
+  \fill[edcoAlertBg, rounded corners=7pt] (0.06,0.32) rectangle (0.42,0.89);
+  \node[anchor=north west, inner sep=0, font=\fontsize{12}{14}\selectfont\bfseries, text=edcoAlert] at (0.09,0.37)
+    {\faBan\ \ Nunca en un prompt};
+  \node[anchor=north west, inner sep=0, text width=0.30\paperwidth, font=\fsBody] at (0.09,0.47) {%
+    \begin{itemize}\setlength\itemsep{7pt}
+      \item[\textcolor{edcoAlert}{\faTimes}] Cédulas y nombres de afiliados
+      \item[\textcolor{edcoAlert}{\faTimes}] Historias médicas
+      \item[\textcolor{edcoAlert}{\faTimes}] Salarios y nómina
+      \item[\textcolor{edcoAlert}{\faTimes}] Información financiera confidencial
+    \end{itemize}};
+  % Antes / después
+  \draw[edcoAlert, line width=1pt, rounded corners=7pt, fill=white] (0.46,0.32) rectangle (0.94,0.54);
+  \node[anchor=north west, inner sep=0, text width=0.44\paperwidth, font=\fsSmall] at (0.48,0.35) {%
+    {\fsTiny\bfseries\color{edcoAlert}\faTimes\ ANTES\par}\vspace{3pt}
+    «Responde a \textbf{Juan Pérez, C.C. 1.049.876.543}, sobre su incapacidad por \textbf{diabetes}.»};
+  \only<2->{
+    \draw[arrowblue] (0.70,0.555) -- (0.70,0.645);
+    \draw[edcoGreen, line width=1pt, rounded corners=7pt, fill=edcoGreenBg] (0.46,0.67) rectangle (0.94,0.89);
+    \node[anchor=north west, inner sep=0, text width=0.44\paperwidth, font=\fsSmall] at (0.48,0.70) {%
+      {\fsTiny\bfseries\color{edcoGreen}\faCheck\ DESPUÉS\par}\vspace{3pt}
+      «Responde a \textbf{[AFILIADO]} sobre una \textbf{incapacidad médica}, en tono cordial y formal.»};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 28. EJERCICIO: ¿SÍ O NO?  (revela respuestas)
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.09}{0.78}{Ejercicio rápido: ¿sí o no?}{Respondan en el chat antes de revelar}
+  \foreach \y/\q/\ok/\h/\s in {
+      0.30/Pegar el listado de afiliados con cédulas para clasificarlos/0/Anonimizar primero/2,
+      0.45/Pedir el borrador de una circular sobre el nuevo horario/1/Y revisarlo antes de enviar/3,
+      0.60/Subir el reglamento interno a NotebookLM para consultarlo/1/Si no tiene datos personales/4,
+      0.75/Analizar la nómina del área con nombres y salarios/0/Usar datos agregados o ficticios/5}{
+    \fill[gray!10, rounded corners=6pt] (0.06,\y) rectangle (0.70,\y+0.12);
+    \node[anchor=west, inner sep=0, text width=0.60\paperwidth, font=\fsBody] at (0.08,\y+0.06) {\q};
+    \only<\s->{
+      \ifnum\ok=1
+        \fill[edcoGreenBg, rounded corners=6pt] (0.72,\y) rectangle (0.94,\y+0.12);
+        \node[anchor=west, inner sep=0, text width=0.20\paperwidth, align=left] at (0.735,\y+0.06)
+          {{\fontsize{11}{12}\selectfont\bfseries\color{edcoGreen}\faCheck\ SÍ\par}{\fsTiny\color{edcoGray}\h\par}};
+      \else
+        \fill[edcoAlertBg, rounded corners=6pt] (0.72,\y) rectangle (0.94,\y+0.12);
+        \node[anchor=west, inner sep=0, text width=0.20\paperwidth, align=left] at (0.735,\y+0.06)
+          {{\fontsize{11}{12}\selectfont\bfseries\color{edcoAlert}\faTimes\ NO\par}{\fsTiny\color{edcoGray}\h\par}};
+      \fi
+    }
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 29. SÍNTESIS
+% =========================================================================
+\usebg{10}
+\begin{frame}[plain]
+\begin{canvas}
+  \node[anchor=north west, inner sep=0, text width=0.40\paperwidth, align=left] at (0.58,0.30)
+    {{\fontsize{17}{21}\selectfont\bfseries\color{edcoDark}Lo que nos llevamos hoy\par}};
+  \foreach \y/\n/\b/\t in {
+      {0.52/1/{Copiloto, no piloto}/{La IA amplifica, no reemplaza}},
+      {0.66/2/{Predice, no sabe}/{Siempre comprobar (ACT)}},
+      {0.80/3/Datos personales/Nunca sin anonimizar}}{
+    \NumAt{0.60}{\y}{\n}
+    \node[anchor=west, inner sep=0, text width=0.32\paperwidth, align=left] at (0.635,\y) {%
+      {\fsBody\bfseries\b\par}{\fsSmall\color{edcoGray}\t\par}};
+  }
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 30. PREPARACIÓN SESIÓN 2
+% =========================================================================
+\skeletonbg
+\begin{frame}[plain]
+\begin{canvas}
+  \TitleAt{0.06}{0.08}{0.78}{¡Manos a la obra!}{Sesión 2 \textperiodcentered\ Presencial \textperiodcentered\ 4 horas \textperiodcentered\ Prompts con Gemini}
+  \Card{0.06}{0.24}{0.26}{0.49}{edcoPale}{white}{\faLaptop}{Su portátil}{Con batería y cargador}
+  \Card{0.37}{0.24}{0.26}{0.49}{edcoPale}{white}{\faUserCheck}{Su cuenta @uniandes}{Verifique que puede ingresar}
+  \Card{0.68}{0.24}{0.26}{0.49}{edcoPale}{white}{\faClipboardList}{Una tarea real}{Algo que le quite tiempo o le cueste empezar}
+  \fill[edcoBlue, rounded corners=7pt] (0.06,0.77) rectangle (0.94,0.89);
+  \node[text=white, font=\fontsize{11.5}{14}\selectfont\bfseries] at (0.50,0.83)
+    {La resolveremos en vivo, paso a paso, durante la sesión.};
+\end{canvas}
+\end{frame}
+
+% =========================================================================
+% 32. GRACIAS Y CIERRE CON GEMINI IA
+% =========================================================================
+\usebg{11}
+\begin{frame}[plain]
+\begin{canvas}
+  % Tarjeta destacada de Google Gemini IA en la izquierda
+  \fill[white, rounded corners=12pt, draw=edcoLightBlue, line width=1pt] (0.07,0.18) rectangle (0.51,0.84);
+  \node[anchor=north west, inner sep=0] at (0.10,0.22) {%
+    \includegraphics[height=0.60cm]{Google_Gemini_logo.png}};
+  \node[anchor=north west, inner sep=0, text width=0.37\paperwidth, align=left] at (0.10,0.31) {%
+    {\fontsize{12}{15}\selectfont\bfseries\color{edcoBlue}Presentación creada con IA\par}\vspace{8pt}%
+    {\fontsize{9}{12.5}\selectfont\color{edcoDark}%
+    Este material de clase y su estructura fueron diseñados con apoyo de herramientas de IA de \textbf{Google Gemini}.\par\vspace{8pt}%
+    Al finalizar este curso de 24 horas, ustedes también podrán aprovechar estas tecnologías para crear presentaciones, estructurar informes y resolver tareas reales en su día a día en COMFABOY.\par}};
+
+  % Cierre y preguntas (debajo de ¡Gracias!)
+  \node[anchor=north west, inner sep=0, text width=0.35\paperwidth, align=left] at (0.595,0.64) {%
+    {\fontsize{14}{18}\selectfont\bfseries\color{edcoBlue}¿Preguntas?\par}\vspace{4pt}
+    {\fsSmall\color{edcoGray}Nos vemos en la sesión presencial\par}};
+\end{canvas}
+\end{frame}
+
+\end{document}
