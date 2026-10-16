@@ -1,73 +1,109 @@
 # latex2pptx
 
-A reliable, faithful command-line tool to convert complex LaTeX Beamer presentations into equivalent, editable PowerPoint (`.pptx`) presentations.
+<div align="center">
 
-Developed and tested against complex, modern Beamer slides featuring extensive TikZ drawings, coordinate mathematics, custom macros, FontAwesome5 icons, multi-line paragraph groupings, and overlay steps (`\only<...>`, `\pause`, etc.).
+[![CI](https://github.com/dcuevasa/latex2pptx/actions/workflows/ci.yml/badge.svg)](https://github.com/dcuevasa/latex2pptx/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/dcuevasa/latex2pptx?color=blue&logo=github)](https://github.com/dcuevasa/latex2pptx/releases)
+[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue?logo=python)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+**Convert complex LaTeX Beamer presentations into faithful, fully editable PowerPoint (`.pptx`) slides.**
+
+[Key Features](#key-features) • [Installation](#installation) • [Quick Start](#quick-start) • [CLI Reference](#cli-reference) • [Architecture](#architecture) • [License](#license)
+
+</div>
 
 ---
 
-## Features
+## Overview
 
-- **Editable Native PowerPoint Elements**: Converts text, rectangles, rounded rectangles (with matched corner radius), circles/ovals, and custom vector curves into native PowerPoint shapes (`AUTO_SHAPE`, `TEXT_BOX`, and DrawingML `<a:custGeom>` Freeforms).
-- **Faithful Visual Layout**: Preserves exact 16:9 widescreen proportions, colors, fonts, baselines, and geometric alignment.
-- **Sub-Pixel Icon & Symbol Isolation**: Isolates FontAwesome5 icons and math symbols and rasterizes them with high-DPI supersampling and tight alpha cropping, preventing font missing/corrupted glyph issues across different operating systems.
-- **Overlay Step Preservation**: Accurately maps each Beamer overlay step (`\only<2->`, `\pause`, etc.) to its corresponding PowerPoint slide.
-- **Smart Asset & Placeholder Management**: Detects referenced images (including macro loops like `bg#1`) and automatically generates clean visual placeholders if source images are missing, ensuring compilation never crashes.
-- **Dual Input Modes**: Directly compiles `.tex` files with multi-pass TeX engines (`pdflatex`, `xelatex`, `lualatex`), or accepts already-compiled `.pdf` files.
+**`latex2pptx`** is a robust command-line tool engineered to bridge the gap between LaTeX Beamer and Microsoft PowerPoint. Unlike tools that simply convert PDF pages into static slide images, `latex2pptx` extracts, reconstructs, and generates **native, fully editable PowerPoint objects**:
+
+- **Native Text Boxes** with matching fonts, colors, baselines, and kerning.
+- **Native AutoShapes** (rectangles, rounded rectangles with accurate corner radii, ovals/circles).
+- **Native Vector Curves** via DrawingML `<a:custGeom>` custom cubic Bézier shapes.
+- **Overlay Steps** (`\only<...>`, `\pause`, etc.) mapped 1-to-1 to successive PowerPoint slides.
+- **High-DPI Isolated Graphics** for icons (e.g. `fontawesome5`) and complex math symbols with tight alpha bounds.
+- **TikZ Soft Clipping** supporting circular avatars, rounded-corner image crops, and arbitrary clipping paths.
+
+Tested and validated on complex, production-grade Beamer slides featuring coordinate mathematics, custom macro loops (`\usebg{1}`..`\usebg{11}`), multi-column cards, and mixed typography.
+
+---
+
+## Key Features
+
+### 🎨 Native & Editable PowerPoint Elements
+- Text boxes are fully selectable, editable, and copyable.
+- Visual vector geometry is translated directly into native PowerPoint `AUTO_SHAPE` elements or `<a:custGeom>` vector paths. Default PowerPoint theme drop shadows are automatically stripped so slides remain clean and flat.
+
+### 📐 Calibrated Baseline & Sub-Pixel Font Alignment
+- LaTeX `LMSans` fonts have narrower character advances and smaller x-heights than standard system sans-serif fonts (`Liberation Sans` / `Arial`). `latex2pptx` measures each line with FreeType at the glyph level and applies calibrated font scaling and baseline positioning (`top = origin_y - size`), completely eliminating text overflow and vertical drift.
+
+### ⏱️ Beamer Overlay & Animation Preservation
+- Slides with `\only<1>`, `\only<2->`, or `\pause` are faithfully expanded into separate sequential slides, preserving the exact pacing and transitions of the compiled presentation.
+
+### 🖼️ Smart Image & Clipping Path Handling
+- High-resolution images are extracted with their underlying alpha masks (`SMask`).
+- TikZ clipping masks (`\clip circle`, `\clip rounded rectangle`) are executed as anti-aliased transparency channels, ensuring circular profile photos and rounded badges appear smoothly in PowerPoint.
+- Automatically handles filename variants and searches configured `\graphicspath` directories.
+
+### 🛡️ Missing Asset Recovery & Placeholders
+- Missing background images or logos referenced in LaTeX loops are automatically substituted with clean visual vector placeholders during intermediate compilation, preventing compilation halts.
 
 ---
 
 ## Installation
 
 ### Prerequisites
-- Python 3.9+
-- A TeX Live distribution (`pdflatex`, `texlive-latex-recommended`, `texlive-pictures`, `texlive-fonts-extra`, etc.)
+- Python 3.9 or higher
+- A standard TeX Live distribution (`pdflatex`, `xelatex`, or `lualatex`):
+  ```bash
+  # Debian / Ubuntu
+  sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-pictures fonts-liberation
 
-### Install via pip
+  # macOS (Homebrew)
+  brew install --cask mactex-no-gui
+  ```
+
+### Install with pip
 ```bash
 git clone https://github.com/dcuevasa/latex2pptx.git
 cd latex2pptx
 pip install -e .
 ```
 
+Verify your installation:
+```bash
+latex2pptx --version
+```
+
 ---
 
-## Usage
+## Quick Start
 
-### Basic Usage
-Convert a `.tex` presentation directly to `.pptx`:
+### 1. Convert a `.tex` Source File
+Directly compile and convert a LaTeX Beamer source presentation:
 ```bash
-latex2pptx clase1.tex
+latex2pptx presentation.tex
 ```
-This produces `clase1.pptx` in the same directory.
+This produces `presentation.pptx` in the same directory.
 
-### Specify Output Path
+### 2. Specify Output File
 ```bash
-latex2pptx clase1.tex -o presentation.pptx
+latex2pptx presentation.tex -o output_deck.pptx
 ```
 
-### Convert Existing Compiled PDF
+### 3. Convert an Existing Compiled PDF
 If you already have a compiled Beamer PDF:
 ```bash
-latex2pptx clase1.pdf -o presentation.pptx
+latex2pptx presentation.pdf -o output_deck.pptx
 ```
 
-### Additional Options
+### 4. Provide Additional Image Directories
+If your LaTeX presentation loads assets from custom folders or subdirectories:
 ```bash
-# Search additional directories for images
-latex2pptx clase1.tex -I ./assets -I ./img
-
-# Use XeLaTeX or LuaLaTeX
-latex2pptx clase1.tex --engine xelatex
-
-# Specify compiler passes (default: 2)
-latex2pptx clase1.tex --passes 2
-
-# Fail if any image is missing (disable auto-placeholders)
-latex2pptx clase1.tex --no-placeholder-images
-
-# Verbose progress output
-latex2pptx clase1.tex -v
+latex2pptx presentation.tex -I ./assets -I ./img
 ```
 
 ---
@@ -101,27 +137,61 @@ options:
 
 ## Architecture
 
-1. **Compiler Pipeline (`compiler.py`)**:
-   Runs multi-pass compilation inside an isolated staging directory. Scans LaTeX macros and `\graphicspath` for external image dependencies and generates labeled vector placeholders if any asset is missing.
-2. **Layer Separation & Vector Classifier (`shapes.py`)**:
-   Inspects PDF vector streams (`seqno`), classifying geometry into native PowerPoint `RECTANGLE`, `ROUNDED_RECTANGLE`, `OVAL`, or custom Bézier geometry (`<a:custGeom>`) while removing default theme drop shadows.
-3. **Typography & Paragraph Merger (`text.py`)**:
-   Extracts characters from raw glyph dictionaries with kerning preservation, maps TeX fonts to system font families, and merges lines into native text boxes with calibrated baseline offsets (`top = origin_y - size`) and baseline line-spacing.
-4. **Symbol & Icon Isolation (`icons.py`)**:
-   Filters PDF content streams to isolate icon glyphs, supersamples them at 8x with anti-aliasing, and tightly crops alpha bounds for pixel-faithful rendering.
-5. **Image & Clip Handling (`images.py`)**:
-   Extracts embedded raster images, preserving SMask transparency and executing TikZ clipping paths (`\clip circle`, `\clip rounded rectangle`) as anti-aliased alpha channels.
+`latex2pptx` operates through a multi-stage modular conversion pipeline:
+
+```
+┌─────────────────┐     ┌──────────────────────┐     ┌────────────────────────┐
+│  clase1.tex     │ ──> │ compiler.py          │ ──> │ Multi-pass TeX Build   │
+│  (Beamer+TikZ)  │     │ (Asset Recovery & Stg)│    │ (pdflatex / xelatex)   │
+└─────────────────┘     └──────────────────────┘     └───────────┬────────────┘
+                                                                 │ (PDF)
+                                                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ converter.py (Global Z-Order Stream Parser)                                 │
+│                                                                             │
+│   ├── shapes.py: Vector geometry -> PPTX Native Shapes & <a:custGeom>      │
+│   ├── text.py: FreeType metric scaling & calibrated baseline text boxes    │
+│   ├── images.py: Raster extraction, SMask transparency & TikZ clip masks    │
+│   └── icons.py: FontAwesome & symbol isolation at 8x supersampling          │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+                             ┌───────────────────┐
+                             │    output.pptx    │
+                             │ (Native Editable) │
+                             └───────────────────┘
+```
+
+1. **`compiler.py`**: Runs isolated multi-pass compilation. Analyzes `\graphicspath` and LaTeX macros for image dependencies and auto-generates geometry-matched placeholders for any missing assets.
+2. **`converter.py`**: Interrogates the PDF drawing and clipping streams in strict z-order, synchronizing visual layers.
+3. **`shapes.py`**: Classifies PDF vector paths (`rect`, `roundrect`, `circle`, `cubic bezier`), builds PowerPoint DrawingML geometry, and strips legacy PowerPoint drop shadows.
+4. **`text.py`**: Performs character-level glyph kerning, normalizes whitespace and punctuation, detects alignment (left, center, right), and scales font sizes using FreeType metrics to prevent line overflows while locking baseline vertical coordinates.
+5. **`images.py`**: Extracts embedded raster images, handles alpha transparency (`SMask`), and renders clipped paths with sub-pixel anti-aliasing.
+6. **`icons.py`**: Identifies symbol/icon glyphs (FontAwesome5, Computer Modern symbols), supersamples them at 8x, and tightly crops alpha bounds.
 
 ---
 
 ## Running Tests
 
-Run the test suite with:
+The test suite covers CLI argument parsing, asset discovery, placeholder generation, font metric scaling, and end-to-end Beamer compilation:
+
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
 ---
 
+## Contributing
+
+Contributions, bug reports, and feature suggestions are welcome! Feel free to:
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/my-feature`).
+3. Commit your changes (`git commit -m "feat: Add support for ..."`).
+4. Push to the branch (`git push origin feature/my-feature`).
+5. Open a Pull Request.
+
+---
+
 ## License
-MIT License
+
+This project is licensed under the [MIT License](LICENSE).

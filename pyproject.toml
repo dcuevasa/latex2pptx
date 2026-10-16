@@ -8,12 +8,47 @@ version = "1.0.0"
 description = "A reliable CLI tool to convert complex LaTeX Beamer slides into faithful, editable PowerPoint presentations."
 readme = "README.md"
 requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "David Cuevas", email = "dcuevasa@users.noreply.github.com" }
+]
+keywords = [
+    "latex",
+    "beamer",
+    "powerpoint",
+    "pptx",
+    "presentation",
+    "converter",
+    "tikz",
+    "pdf-to-pptx"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Presentation",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
 dependencies = [
     "python-pptx>=1.0.0",
     "pymupdf>=1.24.0",
     "pillow>=10.0.0",
     "lxml>=4.9.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/dcuevasa/latex2pptx"
+Repository = "https://github.com/dcuevasa/latex2pptx.git"
+Issues = "https://github.com/dcuevasa/latex2pptx/issues"
 
 [project.scripts]
 latex2pptx = "latex2pptx.cli:main"
