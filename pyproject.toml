@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "latex2pptx"
-version = "1.0.0"
+version = "1.1.0"
 description = "A reliable CLI tool to convert complex LaTeX Beamer slides into faithful, editable PowerPoint presentations."
 readme = "README.md"
 requires-python = ">=3.9"

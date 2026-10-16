@@ -11,6 +11,7 @@ from pptx.util import Pt
 
 from .icons import add_icons_to_slide, make_icons_only_doc
 from .images import extract_image_bytes, make_clipped_images_doc
+from .notes import apply_notes_to_slide, load_and_parse_notes
 from .shapes import add_drawing_to_slide
 from .text import (
     add_paragraphs_to_slide,
@@ -22,11 +23,13 @@ from .text import (
 def convert_pdf_to_pptx(
     pdf_path: str,
     output_pptx_path: Optional[str] = None,
+    notes_file: Optional[str] = None,
     verbose: bool = False,
 ) -> str:
     """
     Convert a compiled Beamer PDF into an editable PowerPoint (.pptx) presentation,
     faithfully preserving visual layout, colors, typography, shapes, and icons.
+    Optionally attaches markdown speaker notes to each slide.
     """
     if not os.path.isfile(pdf_path):
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
@@ -43,16 +46,29 @@ def convert_pdf_to_pptx(
     clip_doc = make_clipped_images_doc(pdf_path)
     icon_doc = make_icons_only_doc(pdf_path)
 
+    notes_map = {}
+    if notes_file:
+        notes_map = load_and_parse_notes(notes_file)
+        if verbose:
+            print(f"[latex2pptx] Loaded speaker notes for {len(notes_map)} slides from {os.path.basename(notes_file)}")
+
     prs = Presentation()
     prs.slide_width = Pt(doc[0].rect.width)
     prs.slide_height = Pt(doc[0].rect.height)
     blank_layout = prs.slide_layouts[6]
 
+    applied_notes_count = 0
     for pno in range(total_pages):
         page = doc[pno]
         clip_page = clip_doc[pno]
         icon_page = icon_doc[pno]
         slide = prs.slides.add_slide(blank_layout)
+
+        # Attach speaker notes if present for this slide (1-indexed)
+        slide_num = pno + 1
+        if slide_num in notes_map:
+            apply_notes_to_slide(slide, notes_map[slide_num])
+            applied_notes_count += 1
 
         if verbose and (pno % 5 == 0 or pno == total_pages - 1):
             print(f"[latex2pptx] Processing slide {pno + 1}/{total_pages}...")
@@ -102,6 +118,9 @@ def convert_pdf_to_pptx(
         # Add native editable text boxes
         paragraphs = group_lines_into_paragraphs(lines, shapes_rects)
         add_paragraphs_to_slide(slide, paragraphs, page.rect)
+
+    if notes_file and verbose:
+        print(f"[latex2pptx] Successfully attached speaker notes to {applied_notes_count}/{total_pages} slides.")
 
     prs.save(output_pptx_path)
     return output_pptx_path

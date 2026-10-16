@@ -51,6 +51,9 @@ Tested and validated on complex, production-grade Beamer slides featuring coordi
 ### 🛡️ Missing Asset Recovery & Placeholders
 - Missing background images or logos referenced in LaTeX loops are automatically substituted with clean visual vector placeholders during intermediate compilation, preventing compilation halts.
 
+### 📝 Speaker Notes from Markdown
+- Attach speaker notes to each slide directly from a Markdown (`.md`) file using headings (`# Slide 1: Welcome`, `## Slide 2-4: Overlays`, `### Diapositiva 5`), HTML comment directives (`<!-- slide: 1 -->`), or horizontal rules (`---`). See [Speaker Notes Guide](docs/SPEAKER_NOTES.md).
+
 ---
 
 ## Installation
@@ -106,6 +109,37 @@ If your LaTeX presentation loads assets from custom folders or subdirectories:
 latex2pptx presentation.tex -I ./assets -I ./img
 ```
 
+### 5. Attach Speaker Notes from Markdown
+Attach speaking prompts, talking points, or bullet lists directly to each slide:
+```bash
+latex2pptx presentation.tex -n notes.md -o output_deck.pptx
+```
+*(Tip: If you name your file `<input_stem>.notes.md`, e.g. `presentation.notes.md`, `latex2pptx` automatically attaches it!)*
+
+---
+
+## Speaker Notes (.md)
+
+You can write notes in Markdown using simple headings or delimiters. Full details and examples are documented in [docs/SPEAKER_NOTES.md](docs/SPEAKER_NOTES.md).
+
+```markdown
+# Slide 1: Welcome & Introductions
+Welcome everyone to the session.
+- Introduce speakers
+- Mention session agenda
+
+## Slide 2-4: Core Concepts
+Notes that apply across multiple Beamer overlay steps.
+- Key takeaways
+- Audience check-in
+
+### Diapositiva 5
+Spanish keywords like Diapositiva / Diapo / Página are fully supported!
+
+---
+Or simply use horizontal rules to separate slides sequentially.
+```
+
 ---
 
 ## CLI Reference
@@ -113,7 +147,7 @@ latex2pptx presentation.tex -I ./assets -I ./img
 ```text
 usage: latex2pptx [-h] [-o OUTPUT] [-e {pdflatex,xelatex,lualatex}] [-p PASSES]
                   [-I IMAGE_DIRS] [--placeholder-images] [--no-placeholder-images]
-                  [--keep-temp] [-v] [--version]
+                  [-n NOTES_FILE] [--keep-temp] [-v] [--version]
                   input
 
 positional arguments:
@@ -128,6 +162,7 @@ options:
   --placeholder-images  Automatically generate visual placeholder images for missing assets (default: enabled).
   --no-placeholder-images
                         Fail compilation if any referenced images are missing.
+  -n, --notes           Path to a Markdown (.md) file containing speaker notes for slides.
   --keep-temp           Keep the temporary compilation build directory for debugging.
   -v, --verbose         Enable verbose output.
   --version             show program's version number and exit
@@ -152,7 +187,8 @@ options:
 │   ├── shapes.py: Vector geometry -> PPTX Native Shapes & <a:custGeom>      │
 │   ├── text.py: FreeType metric scaling & calibrated baseline text boxes    │
 │   ├── images.py: Raster extraction, SMask transparency & TikZ clip masks    │
-│   └── icons.py: FontAwesome & symbol isolation at 8x supersampling          │
+│   ├── icons.py: FontAwesome & symbol isolation at 8x supersampling          │
+│   └── notes.py: Markdown notes parser (headings, ranges, delimiters)        │
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │
                                        ▼
@@ -168,6 +204,7 @@ options:
 4. **`text.py`**: Performs character-level glyph kerning, normalizes whitespace and punctuation, detects alignment (left, center, right), and scales font sizes using FreeType metrics to prevent line overflows while locking baseline vertical coordinates.
 5. **`images.py`**: Extracts embedded raster images, handles alpha transparency (`SMask`), and renders clipped paths with sub-pixel anti-aliasing.
 6. **`icons.py`**: Identifies symbol/icon glyphs (FontAwesome5, Computer Modern symbols), supersamples them at 8x, and tightly crops alpha bounds.
+7. **`notes.py`**: Parses structured Markdown notes files into 1-indexed slide mapping and populates PowerPoint speaker notes frames.
 
 ---
 

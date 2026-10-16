@@ -63,6 +63,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Fail compilation if any referenced images are missing.",
     )
     parser.add_argument(
+        "-n",
+        "--notes",
+        dest="notes_file",
+        default=None,
+        help="Path to a Markdown (.md) file containing speaker notes for slides.",
+    )
+    parser.add_argument(
         "--keep-temp",
         action="store_true",
         help="Keep the temporary compilation build directory for debugging.",
@@ -123,11 +130,28 @@ def main(argv=None) -> int:
         output_pptx = f"{base}.pptx"
     output_pptx = os.path.abspath(output_pptx)
 
+    # Resolve speaker notes file
+    notes_file = args.notes_file
+    if notes_file:
+        notes_file = os.path.abspath(notes_file)
+        if not os.path.isfile(notes_file):
+            print(f"Error: speaker notes file not found: {notes_file}", file=sys.stderr)
+            return 1
+    else:
+        # Auto-detect <stem>.notes.md if present
+        stem = os.path.splitext(input_path)[0]
+        candidate = f"{stem}.notes.md"
+        if os.path.isfile(candidate):
+            notes_file = candidate
+            if args.verbose:
+                print(f"[latex2pptx] Auto-detected speaker notes: {os.path.basename(notes_file)}")
+
     print(f"[latex2pptx] Converting PDF to PowerPoint: {os.path.basename(output_pptx)}...")
     try:
         convert_pdf_to_pptx(
             pdf_path=pdf_path,
             output_pptx_path=output_pptx,
+            notes_file=notes_file,
             verbose=args.verbose,
         )
     except Exception as err:
