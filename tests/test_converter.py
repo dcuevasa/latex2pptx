@@ -12,6 +12,7 @@ from PIL import Image
 from latex2pptx.cli import build_parser
 from latex2pptx.compiler import find_missing_images, create_placeholder_image, compile_latex
 from latex2pptx.converter import convert_pdf_to_pptx
+from latex2pptx.text import compute_paragraph_font_scale, measure_line_width_pt
 
 
 class TestLatex2Pptx(unittest.TestCase):
@@ -23,6 +24,26 @@ class TestLatex2Pptx(unittest.TestCase):
         self.assertTrue(args.verbose)
         self.assertEqual(args.engine, "pdflatex")
         self.assertEqual(args.passes, 2)
+
+    def test_paragraph_font_scale_no_overflow(self):
+        sample_line = {
+            "x0": 36.5,
+            "x1": 305.2,
+            "runs": [
+                {
+                    "family": "Liberation Sans",
+                    "bold": False,
+                    "italic": False,
+                    "size": 10.5,
+                    "text": "cada seis meses la autorización escrita de sus afiliados para el",
+                }
+            ],
+        }
+        unscaled_w = measure_line_width_pt(sample_line)
+        pdf_w = sample_line["x1"] - sample_line["x0"]
+        self.assertGreater(unscaled_w, pdf_w)
+        scale = compute_paragraph_font_scale([sample_line], "left")
+        self.assertLessEqual(unscaled_w * scale, pdf_w + 0.55)
 
     def test_find_missing_images(self):
         sample_tex = r"""

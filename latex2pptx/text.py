@@ -3,10 +3,81 @@ Text extraction, paragraph grouping, alignment detection, and native PowerPoint 
 """
 
 import math
+import os
 from typing import Any, Dict, List, Optional, Tuple
+from PIL import ImageFont
 from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_AUTO_SIZE, PP_ALIGN
 from pptx.util import Emu, Pt
+
+_FONT_PATHS = {
+    ("Liberation Sans", False, False): "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    ("Liberation Sans", True, False): "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    ("Liberation Sans", False, True): "/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf",
+    ("Liberation Sans", True, True): "/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf",
+    ("Liberation Mono", False, False): "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+    ("Liberation Mono", True, False): "/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf",
+    ("Liberation Mono", False, True): "/usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf",
+    ("Liberation Mono", True, True): "/usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf",
+}
+_LOADED_FONTS: Dict[Tuple[str, bool, bool], Optional[Any]] = {}
+
+
+def _get_pil_font(family: str, bold: bool, italic: bool) -> Optional[Any]:
+    """Load and cache a 1000-pt PIL FreeType font for accurate advance width calculation."""
+    key = (family, bold, italic)
+    if key not in _LOADED_FONTS:
+        path = _FONT_PATHS.get(key) or _FONT_PATHS.get((family, bold, False)) or _FONT_PATHS.get(("Liberation Sans", False, False))
+        if path and os.path.exists(path):
+            try:
+                _LOADED_FONTS[key] = ImageFont.truetype(path, 1000)
+            except Exception:
+                _LOADED_FONTS[key] = None
+        else:
+            _LOADED_FONTS[key] = None
+    return _LOADED_FONTS[key]
+
+
+def measure_line_width_pt(ln: Dict[str, Any]) -> float:
+    """Measure the unscaled width in points of a line when rendered in its target PowerPoint font."""
+    total_w = 0.0
+    for r in ln["runs"]:
+        font = _get_pil_font(r["family"], r["bold"], r["italic"])
+        if font is not None:
+            total_w += font.getlength(r["text"]) * (r["size"] / 1000.0)
+        else:
+            # Fallback heuristic if system TTF is unavailable
+            factor = 0.60 if r["family"] == "Liberation Mono" else (0.55 if r["bold"] else 0.52)
+            total_w += len(r["text"]) * r["size"] * factor
+    return total_w
+
+
+def compute_paragraph_font_scale(p_lines: List[Dict[str, Any]], align: str) -> float:
+    """
+    Compute a uniform font size scale factor for a paragraph so that target fonts
+    (e.g. Liberation Sans / Arial) match narrow LaTeX Sans (LMSans) x-height and
+    never overflow the PDF line bounding boxes horizontally.
+    """
+    is_bold = any(r["bold"] for ln in p_lines for r in ln["runs"])
+    is_mono = any(r["family"] == "Liberation Mono" for ln in p_lines for r in ln["runs"])
+    if is_mono:
+        base_scale = 0.96
+    elif is_bold:
+        base_scale = 0.925
+    else:
+        base_scale = 0.94
+
+    max_pdf_w = max(ln["x1"] - ln["x0"] for ln in p_lines)
+    scale = base_scale
+    for ln in p_lines:
+        pdf_w = ln["x1"] - ln["x0"]
+        ft_w = measure_line_width_pt(ln)
+        if ft_w > 1.0:
+            slack = 1.5 if (align == "left" and pdf_w < 35.0) else 0.5
+            avail_w = max(pdf_w + slack, 0.92 * max_pdf_w)
+            scale = min(scale, avail_w / ft_w)
+    return max(0.85, scale)
+
 
 
 def rgb_from_int(val: int) -> RGBColor:
@@ -290,6 +361,9 @@ def add_paragraphs_to_slide(slide: Any, paragraphs: List[Dict[str, Any]], page_r
         dx, dy = first["dir"]
         angle_deg = math.degrees(math.atan2(dy, dx))
 
+        p_scale = compute_paragraph_font_scale(p_lines, align)
+        scaled_first_size = first["size"] * p_scale
+
         x0 = min(ln["x0"] for ln in p_lines)
         x1 = max(ln["x1"] for ln in p_lines)
         raw_w = max(4.0, x1 - x0)
@@ -301,7 +375,7 @@ def add_paragraphs_to_slide(slide: Any, paragraphs: List[Dict[str, Any]], page_r
             cx = 0.5 * (x0 + x1)
             cy = 0.5 * (y0 + y1)
             box_w = raw_w * 1.25 + 16.0
-            box_h = first["size"] * 1.35
+            box_h = scaled_first_size * 1.35
             left = cx - 0.5 * box_w
             top = cy - 0.45 * box_h
             align = "center"
@@ -318,9 +392,9 @@ def add_paragraphs_to_slide(slide: Any, paragraphs: List[Dict[str, Any]], page_r
                 left = x0
                 box_w = min(page_rect.width - left + 10.0, raw_w + pad_w)
 
-            # Calibrated baseline formula: top = first.origin_y - 1.0 * first.size
-            top = first["origin_y"] - 1.0 * first["size"]
-            box_h = (p_lines[-1]["origin_y"] - first["origin_y"]) + first["size"] * 1.35
+            # Calibrated baseline formula: top = first.origin_y - 1.0 * scaled_first_size
+            top = first["origin_y"] - 1.0 * scaled_first_size
+            box_h = (p_lines[-1]["origin_y"] - first["origin_y"]) + scaled_first_size * 1.35
 
         tb = slide.shapes.add_textbox(Pt(left), Pt(top), Pt(box_w), Pt(box_h))
         if abs(angle_deg) > 0.5:
@@ -352,7 +426,7 @@ def add_paragraphs_to_slide(slide: Any, paragraphs: List[Dict[str, Any]], page_r
                 run = para.add_run()
                 run.text = r_info["text"]
                 run.font.name = r_info["family"]
-                run.font.size = Pt(r_info["size"])
+                run.font.size = Pt(r_info["size"] * p_scale)
                 run.font.bold = r_info["bold"]
                 run.font.italic = r_info["italic"]
                 run.font.color.rgb = r_info["color"]
